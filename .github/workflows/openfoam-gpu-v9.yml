@@ -21,7 +21,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: ghcr.io/jiaqiwang969/openfoam-pawsey-v2206
+          images: ghcr.io/jiaqiwang969/openfoam-gpu-9
           tag-sha: true
           tag-edge: false
           tag-latest: true
@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           tags: ${{ steps.docker_meta.outputs.tags }} 
-          file: ./OpenFOAM/openfoam/v2206/Dockerfile
+          file: ./OpenFOAM/openfoam-org/9-gpu/Dockerfile
           
           
       - name: Push image
@@ -51,4 +51,4 @@ jobs:
         with:
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
-          file: ./OpenFOAM/openfoam/v2206/Dockerfile
+          file: ./OpenFOAM/openfoam-org/9-gpu/Dockerfile
