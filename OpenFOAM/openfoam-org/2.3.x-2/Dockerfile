@@ -2,20 +2,20 @@
 #---------------------------------------------------------------
 #---------------------------------------------------------------
 # 0. Initial main definition
-# Defining the base container to build from
+# Defining the base image to build from
 # In this case: mpich 3.1.4 and ubuntu 16.04; MPICH is needed for crays
+#FROM quay.io/pawsey/mpich-base:3.4.3_ubuntu16.04
+
 FROM ghcr.io/jiaqiwang969/10.2-16.06-cuda:sha-697a5cf
 
-LABEL maintainer="Alexis.Espinosa@pawsey.org.au"
+LABEL maintainer="jiaqiwang969@gmail.com"
+
 #OpenFOAM version to install
 ARG OFVERSION="2.3.x"
 #Using bash from now on
 SHELL ["/bin/bash", "-c"]
 
 
-
-#RUN rm /etc/apt/sources.list.d/cuda.list
-#RUN rm /etc/apt/sources.list.d/nvidia-ml.list
 #---------------------------------------------------------------
 #---------------------------------------------------------------
 #---------------------------------------------------------------
@@ -23,7 +23,7 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update -qq\
  &&  apt-get -y --no-install-recommends install \
             vim time\
-            cron \
+            cron gosu \
             bc \
  && apt-get clean all \
  && rm -r /var/lib/apt/lists/*
@@ -57,14 +57,15 @@ RUN echo "ofuser:${OFVERSION}" | chpasswd
 # III. INSTALLING OPENFOAM.
 #This section is for installing OpenFOAM
 #Will follow PARTIALLY the official installation instructions:
-#https://openfoam.org/download/2-2-0-source/
+#https://openfoam.org/download/2-4-0-source/
 #
-#Will follow PARTIALLY the instructions for OpenFOAM-2.2.0  available in the wiki:
-#https://openfoamwiki.net/index.php/Installation/Linux/OpenFOAM-2.2.0/Ubuntu#Ubuntu_13.10
+#Will follow PARTIALLY the instructions for OpenFOAM-2.4.x  available in the wiki:
+#https://openfoamwiki.net/index.php/Installation/Linux/OpenFOAM-2.4.x/Ubuntu#Ubuntu_16.04
 #
-#Then, Will follow a combination of both.
+#Then, Will follow a combination of both
+#(Also checking wiki for OpenFOAM-2.4.0)
 #
-#(Also checking wiki for OpenFOAM-2.2.2/Ubuntu16.04 and the already successful installation recipe for 2.4.x)
+#Where recipe deviates from the instructions mentioned above, comments from the maintainer are labelled as: AEG
 
 #...........
 #Definition of the installation directory within the container
@@ -84,15 +85,23 @@ WORKDIR $OFINSTDIR
 RUN apt-get update -qq\
  &&  apt-get -y --no-install-recommends --no-install-suggests install \
    build-essential\
-   flex bison cmake zlib1g-dev \
+   flex bison git-core cmake zlib1g-dev \
+   libboost-system-dev libboost-thread-dev \
 #AEG:No OpenMPI because MPICH will be used (installed in the parent FROM image)
 #AEG:NoOpenMPI:   libopenmpi-dev openmpi-bin \
+#AEG:(using libncurses-dev, as in official instructions, and not libncurses5-dev, as in wiki)
    gnuplot libreadline-dev libncurses-dev libxt-dev \
    qt4-dev-tools libqt4-dev libqt4-opengl-dev \ 
    freeglut3-dev libqtwebkit-dev \
 #AEG:No scotch because it installs openmpi which later messes up with MPICH
 #    Therefore, ThirdParty scotch is the one to be installed and used by openfoam.
 #AEG:NoScotch:   libscotch-dev \
+   libcgal-dev \
+#AEG:These libraries are needed for CGAL (system and third party) (if needed, change libgmp-dev for libgmp3-dev):
+   libgmp-dev libmpfr-dev\
+#AEG: Some more suggestions from the wiki instructions:
+   python python-dev \
+   libglu1-mesa-dev \
 #AEG:I found the following was needed to install  FlexLexer.h
    libfl-dev \
  && apt-get clean all \
@@ -100,34 +109,18 @@ RUN apt-get update -qq\
 
 #...........
 #Step 2. Download
-#Change to the installation dir, download openfoam 
-ARG OFVERSIONFORGE=$OFVERSION
+#Change to the installation dir, clone OpenFOAM directories
+ARG OFVERSIONGIT=$OFVERSION
 WORKDIR $OFINSTDIR
-RUN wget --no-check-certificate -O OpenFOAM-${OFVERSION}.tgz \
-    "https://sourceforge.net/projects/openfoam/files/OpenFOAM-${OFVERSIONFORGE}.tgz?use_mirror=mesh" \
- && wget --no-check-certificate -O ThirdParty-${OFVERSION}.tgz \
-    "https://sourceforge.net/projects/openfoam/files/ThirdParty-${OFVERSIONFORGE}.tgz?use_mirror=mesh" \
- && tar -xvzf OpenFOAM-${OFVERSION}.tgz \
- && tar -xvzf ThirdParty-${OFVERSION}.tgz \
- && rm -f OpenFOAM-${OFVERSION}.tgz \
- && rm -f ThirdParty-${OFVERSION}.tgz
+#Try git or https protocol:
+RUN git clone https://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
+ && git clone https://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
+
+##RUN git clone git://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
+## && git clone git://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
 
 #...........
-#Step 3. (Additional, not in the instructions)
-#Adapting settings for the use of the case: WM_MPLIB=SYSTEMMPI
-#Rule files for SYSTEMMPI are not present by default in OpenFoam-2.2.0. Then, these files need to be created.
-#Examples of these files were checked from the ones that do exist in standard OpenFOAM-2.4.x installation
-ARG MPIRULEFILE1=${OFINSTDIR}/OpenFOAM-${OFVERSION}/wmake/rules/General/mplibSYSTEMMPI
-ARG MPIRULEFILE2=${OFINSTDIR}/OpenFOAM-${OFVERSION}/wmake/rules/linux64Gcc/mplibSYSTEMMPI
-ARG OFSETTINGS=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/config/settings.sh
-RUN echo 'PFLAGS     = $(MPI_ARCH_FLAGS)' > ${MPIRULEFILE1} \
- && echo 'PINC       = $(MPI_ARCH_INC)' >> ${MPIRULEFILE1} \
- && echo 'PLIBS      = $(MPI_ARCH_LIBS)' >> ${MPIRULEFILE1} \
- && cp ${MPIRULEFILE1} ${MPIRULEFILE2} \
- && sed -i $'s@^OPENMPI)@SYSTEMMPI)\\\n    export FOAM_MPI=mpi-system\\\n   export MPI_ARCH_PATH=$MPI_ROOT\\\n    ;;\\\nOPENMPI)@' ${OFSETTINGS}
-
-#...........
-#Step 4. Definitions for the prefs and bashrc files.
+#Step 3. Definitions for the prefs and bashrc files.
 ARG OFPREFS=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/prefs.sh
 ARG OFBASHRC=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/bashrc
 
@@ -176,8 +169,8 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
 #" (This comment line is needed to let vi to show the right syntax)
 #Changing the place for your own tools/solvers (WM_PROJECT_USER_DIR directory) within the bashrc file 
 #IMPORTANT:When using this container, you have two options when building your own tools/solvers:
-#   1. You can mount a directory of your local-host into this directory (as explained at the end of the Dockerfile)
-#   2. Or you can include and build stuff inside the container and save it as your own image for later use.
+#   1. You can mount a directory of your local-host into this directory 
+#   2. Or you can include and build stuff inside the image and save it as your own image for later use.
  && sed -i '/^export WM_PROJECT_USER_DIR=.*/aexport WM_PROJECT_USER_DIR="'"${OFUSERDIR}/ofuser"'-$WM_PROJECT_VERSION"' ${OFBASHRC} \
  && sed -i '0,/^export WM_PROJECT_USER_DIR/s//# export WM_PROJECT_USER_DIR/' ${OFBASHRC} \
 #" (This comment line is needed to let vi to show the right syntax)
@@ -185,13 +178,70 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
  && echo ''
 
 #...........
+#Step 4.
+#Install one or the other: paraview or VTK
+#Install paraview or VTK for runTimePostprocessing of OpenFOAM to properly compile
+#Install paraview for graphical postprocessing to be available in the container 
+
+#AEG: Have not tried the VTK only installation yet
+
+##Download paraview (taken from wiki instructions)
+RUN . ${OFBASHRC} \
+ && cd $WM_THIRD_PARTY_DIR \
+ && mkdir download \
+ && wget --no-check-certificate -P download http://www.paraview.org/files/v4.1/ParaView-v4.1.0-source.tar.gz \
+ && tar -xzf download/ParaView-v4.1.0-source.tar.gz \
+ && mv ParaView-v4.1.0 ParaView-4.1.0 \
+ && rm -rf download
+
+##Paraview compilation (Official instructions for 2.4)
+#AEG: (This procedure is not working yet, needs some fix that I have not found) 
+#AEG:(Also take a look into the ThirdParty-xx/README.* files)
+##--##:RUN . ${OFBASHRC} \
+##--##: && cd $WM_THIRD_PARTY_DIR \
+##--##: && ./makeParaView4 | tee log.makePV
+
+##Paraview compilation (Adapted alternative instructions from OpenFoamWiki)
+RUN . ${OFBASHRC} \
+ && cd $WM_THIRD_PARTY_DIR \
+ && export QT_SELECT=qt4 \
+ && sed -i -e 's=//#define GLX_GLXEXT_LEGACY=#define GLX_GLXEXT_LEGACY=' ParaView-4.1.0/VTK/Rendering/OpenGL/vtkXOpenGLRenderWindow.cxx \
+ && cd ParaView-4.1.0 \
+ && wget --no-check-certificate http://www.paraview.org/pipermail/paraview/attachments/20140210/464496cc/attachment.bin -O Fix.patch \
+ && patch -p1 < Fix.patch \
+ && cd VTK \
+ && wget --no-check-certificate https://github.com/gladk/VTK/commit/ef22d3d69421581b33bc0cd94b647da73b61ba96.patch -O Fix2.patch \
+ && patch -p1 < Fix2.patch \
+ && cd $WM_THIRD_PARTY_DIR \
+ && ./makeParaView4 -python -mpi -python-lib /usr/lib/x86_64-linux-gnu/libpython2.7.so.1.0 2>&1 | tee log.makePV
+
+#...........
 #Step 5.
 #Install Third Party tools (preferred to do it as a separate step and not together with the full openfoam compilation) 
 
-#Fix for the build options for scotch:
+#Download scotch because we are not installing from apt-get(see above)
+# (Instructions taken from wiki for Ubuntu 12.04)
 RUN . ${OFBASHRC} \
- && sed -i -e 's=-lz -lm -lrt=-Xlinker --no-as-needed -lz -lm -lrt=' \
-    $WM_THIRD_PARTY_DIR/etc/wmakeFiles/scotch/Makefile.inc.i686_pc_linux2.shlib-OpenFOAM-*
+ && cd $WM_THIRD_PARTY_DIR \
+ && mkdir download \
+ && wget --no-check-certificate -P download \
+    https://gforge.inria.fr/frs/download.php/file/34099/scotch_6.0.3.tar.gz \
+ && tar -xzf download/scotch_6.0.3.tar.gz \
+ && rm -rf download
+
+#Updating the CGAL setting to the system one (installed at the beginning):
+#boost is already signaling to the system one (installed at the beginning too):
+ARG OFCGAL=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/config/CGAL.sh
+RUN . ${OFBASHRC} \
+ && cp ${OFCGAL} ${OFCGAL}.original \
+ && sed -i '/^cgal_version=.*/acgal_version=cgal-system' ${OFCGAL} \
+ && sed -i '0,/^cgal_version/s//# cgal_version/' ${OFCGAL} \
+#AEG: commenting the definition of variables to avoid further settings as will use system installed tools
+ && sed -i 's,export BOOST_ARCH_PATH,# export BOOST_ARCH_PATH,' ${OFCGAL} \
+ && sed -i 's,export CGAL_ARCH_PATH,# export CGAL_ARCH_PATH,' ${OFCGAL} \
+#" (This comment line is needed to let vi to show the right syntax)
+#--Dummy line:
+ && echo ''
 
 #Third party compilation
 RUN . ${OFBASHRC} \
@@ -201,7 +251,7 @@ RUN . ${OFBASHRC} \
 #...........
 #Step 6.
 
-#Fix for the flex version to be checked (idea obtained from the wiki instructions for 2.2.2 ubuntu 16.04)
+#Fix for the flex version to be checked (idea obtained from the wiki instructions for 2.4.0 ubunut 16.04)
 #Because flex is causing problems for the compilation of openfoam also for this version
 RUN . ${OFBASHRC} \
  && cd $WM_PROJECT_DIR \
@@ -224,50 +274,10 @@ RUN . ${OFBASHRC} \
 
 #...........
 #Step 7.
-#Install one or the other: paraview or VTK
-#Install paraview or VTK for runTimePostprocessing of OpenFOAM to properly compile
-#Install paraview for graphical postprocessing to be available in the container 
-#Note (for OpenFOAM-2.2.0 The paraview installation only worked when done after the OpenFOAM installation)
-
-##Installation of old version of cmake (following wiki instructions for OpenFOAM-2.2.2/ubuntu16.04)
-RUN . ${OFBASHRC} \
- && cd $WM_THIRD_PARTY_DIR \
- && wget --no-check-certificate "https://raw.github.com/wyldckat/scripts4OpenFOAM3rdParty/master/getCmake" \
- && chmod +x getCmake \
- && cp getCmake getCmake.original \
- && sed -i -e 's=\.3=.12.1=' getCmake \
- && ./getCmake \
- && ./makeCmake cmake-2.8.12.1 2>&1 | tee log.makeCmake \
- && cd $WM_PROJECT_DIR \
- && cp etc/config/paraview.sh etc/config/paraview.sh.original \
- && sed -i -e 's=cmake-2\.8\.4=cmake-2.8.12.1 cmake-2.8.4=' etc/config/paraview.sh
-
-##Paraview compilation (Official instructions for 2.2.0)
-#AEG: (This procedure is not working yet, needs some fix that I have not found) 
-#AEG:(Also take a look into the ThirdParty-xx/README.* files)
-##--##:RUN . ${OFBASHRC} \
-##--##: && cd $WM_THIRD_PARTY_DIR \
-##--##: && ./makeParaView | tee log.makePV
-
-##Paraview compilation (following wiki instructions for OpenFOAM-2.2.2/ubuntu16.04)
-RUN . ${OFBASHRC} \
- && cd $WM_THIRD_PARTY_DIR \
- && export QT_SELECT=qt4 \
- && cp ParaView-3.12.0/VTK/Rendering/vtkXOpenGLRenderWindow.cxx ParaView-3.12.0/VTK/Rendering/vtkXOpenGLRenderWindow.cxx.original \
- && sed -i -e 's=//#define GLX_GLXEXT_LEGACY=#define GLX_GLXEXT_LEGACY=' ParaView-3.12.0/VTK/Rendering/vtkXOpenGLRenderWindow.cxx \
- && ./makeParaView 2>&1 | tee log.makePV
-
-RUN . ${OFBASHRC} \
- && cd $FOAM_UTILITIES/postProcessing/graphics/PV3Readers \ 
- && ./Allwclean \
- && ./Allwmake
-
-#...........
-#Step 8.
 #Defining defaults of the controlDict
 
 #...........
-#Step 9.
+#Step 8.
 ##Checking if openfoam is working
 RUN . ${OFBASHRC} \
  && cd $WM_PROJECT_DIR \

@@ -4,9 +4,10 @@
 # 0. Initial main definition
 # Defining the base container to build from
 # In this case: mpich 3.1.4 and ubuntu 16.04; MPICH is needed for crays
-FROM quay.io/pawsey/mpich-base:3.4.3_ubuntu16.04
+#FROM quay.io/pawsey/mpich-base:3.4.3_ubuntu16.04
+FROM ghcr.io/jiaqiwang969/10.2-16.06-cuda:sha-697a5cf
 
-LABEL maintainer="Alexis.Espinosa@pawsey.org.au"
+LABEL maintainer="jiaqiwang969@gmail.com"
 #OpenFOAM version to install
 ARG OFVERSION="2.3.x"
 #Using bash from now on
