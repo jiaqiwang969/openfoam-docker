@@ -116,6 +116,9 @@ WORKDIR $OFINSTDIR
 RUN git clone https://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
  && git clone https://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
 
+
+RUN git clone https://github.com/jiaqiwang969/RapidCFD-dev.git 
+
 ##RUN git clone git://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
 ## && git clone git://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
 
@@ -123,6 +126,7 @@ RUN git clone https://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
 #Step 3. Definitions for the prefs and bashrc files.
 ARG OFPREFS=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/prefs.sh
 ARG OFBASHRC=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/bashrc
+ARG OFBASHRC_RapidCFD=${OFINSTDIR}/RapidCFD-dev/etc/bashrc
 
 #...........
 #Defining the prefs.sh:
@@ -177,13 +181,6 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
 #--Dummy line:
  && echo ''
 
-#...........
-#Step 4.
-#Install one or the other: paraview or VTK
-#Install paraview or VTK for runTimePostprocessing of OpenFOAM to properly compile
-#Install paraview for graphical postprocessing to be available in the container 
-
-#AEG: Have not tried the VTK only installation yet
 
 ##Download paraview (taken from wiki instructions)
 RUN . ${OFBASHRC} \
@@ -194,26 +191,8 @@ RUN . ${OFBASHRC} \
  && mv ParaView-v4.1.0 ParaView-4.1.0 \
  && rm -rf download
 
-##Paraview compilation (Official instructions for 2.4)
-#AEG: (This procedure is not working yet, needs some fix that I have not found) 
-#AEG:(Also take a look into the ThirdParty-xx/README.* files)
-##--##:RUN . ${OFBASHRC} \
-##--##: && cd $WM_THIRD_PARTY_DIR \
-##--##: && ./makeParaView4 | tee log.makePV
 
-##Paraview compilation (Adapted alternative instructions from OpenFoamWiki)
-RUN . ${OFBASHRC} \
- && cd $WM_THIRD_PARTY_DIR \
- && export QT_SELECT=qt4 \
- && sed -i -e 's=//#define GLX_GLXEXT_LEGACY=#define GLX_GLXEXT_LEGACY=' ParaView-4.1.0/VTK/Rendering/OpenGL/vtkXOpenGLRenderWindow.cxx \
- && cd ParaView-4.1.0 \
- && wget --no-check-certificate http://www.paraview.org/pipermail/paraview/attachments/20140210/464496cc/attachment.bin -O Fix.patch \
- && patch -p1 < Fix.patch \
- && cd VTK \
- && wget --no-check-certificate https://github.com/gladk/VTK/commit/ef22d3d69421581b33bc0cd94b647da73b61ba96.patch -O Fix2.patch \
- && patch -p1 < Fix2.patch \
- && cd $WM_THIRD_PARTY_DIR \
- && ./makeParaView4 -python -mpi -python-lib /usr/lib/x86_64-linux-gnu/libpython2.7.so.1.0 2>&1 | tee log.makePV
+
 
 #...........
 #Step 5.
@@ -265,6 +244,25 @@ RUN . ${OFBASHRC} \
  && cd $WM_PROJECT_DIR \
  && export QT_SELECT=qt4 \
  && ./Allwmake 2>&1 | tee log.Allwmake
+
+
+
+
+
+#RapidCFD-dev compilation
+#https://github.com/Atizar/RapidCFD-dev/issues/93
+RUN export CUDA_HOME=/usr/local/cuda \
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64 \
+    export PATH=$PATH:$CUDA_HOME/bin
+RUN nvcc --version
+ENV  WM_NCOMPPROCS=4 
+RUN . ${OFBASHRC_RapidCFD} \
+ && cd $WM_PROJECT_DIR \
+ && ./Allwmake 2>&1 | tee log.Allwmake
+
+
+
+
 
 #Obtaining a summary
 RUN . ${OFBASHRC} \
