@@ -11,13 +11,13 @@ SHELL ["/bin/bash","-c"]
 #---------------------------------------------------------------
 #---------------------------------------------------------------
 # I. Installing additional tools useful for interactive sessions
-RUN apt-get update -qq\
- &&  apt-get -y --no-install-recommends install \
-            vim time\
-            cron gosu \
-            bc \
- && apt-get clean all \
- && rm -r /var/lib/apt/lists/*
+#RUN apt-get update -qq\
+# &&  apt-get -y --no-install-recommends install \
+#            vim time\
+#            cron gosu \
+#            bc \
+# && apt-get clean all \
+ #&& rm -r /var/lib/apt/lists/*
 
 
 #---------------------------------------------------------------
@@ -91,6 +91,8 @@ RUN apt-get update && apt-get install -y \
     sudo \
     ssh \
     vim \
+    time \
+    cron gosu \
     wget; \
     rm -rf /var/lib/apt/lists/*
 
