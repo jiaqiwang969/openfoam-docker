@@ -92,6 +92,7 @@ RUN apt-get update && apt-get install -y \
     ssh \
     vim \
     time \
+    git \
     cron gosu \
        build-essential\
    flex bison git-core cmake zlib1g-dev \
