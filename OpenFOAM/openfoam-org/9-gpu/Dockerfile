@@ -127,8 +127,7 @@ WORKDIR $OFINSTDIR
 #But seems to be a bug:
 #https://github.com/phusion/baseimage-docker/issues/319
 #But harmless.
-RUN apt-get update -qq\
- &&  apt-get -y --no-install-recommends --no-install-suggests install \
+RUN apt-get update && apt-get install -y \
    build-essential\
    flex bison git-core cmake zlib1g-dev \
 #AEG:(No third party boost is provided (although can be downloaded) but will use the system installation):
