@@ -182,15 +182,6 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
  && echo ''
 
 
-##Download paraview (taken from wiki instructions)
-RUN . ${OFBASHRC} \
- && cd $WM_THIRD_PARTY_DIR \
- && mkdir download \
- && wget --no-check-certificate -P download http://www.paraview.org/files/v4.1/ParaView-v4.1.0-source.tar.gz \
- && tar -xzf download/ParaView-v4.1.0-source.tar.gz \
- && mv ParaView-v4.1.0 ParaView-4.1.0 \
- && rm -rf download
-
 
 
 
@@ -238,13 +229,6 @@ RUN . ${OFBASHRC} \
  && find src applications -name "*.L" -type f | xargs sed -i -e \
     's=\(YY\_FLEX\_SUBMINOR\_VERSION\)=YY_FLEX_MINOR_VERSION < 6 \&\& \1='
 
-#OpenFOAM compilation 
-ENV WM_NCOMPPROCS=4
-RUN . ${OFBASHRC} \
- && cd $WM_PROJECT_DIR \
- && export QT_SELECT=qt4 \
- && ./Allwmake 2>&1 | tee log.Allwmake
-
 
 
 
@@ -261,7 +245,12 @@ RUN . ${OFBASHRC_RapidCFD} \
  && ./Allwmake 2>&1 | tee log.Allwmake
 
 
-
+#OpenFOAM compilation
+ENV WM_NCOMPPROCS=4
+RUN . ${OFBASHRC} \
+ && cd $WM_PROJECT_DIR \
+ && export QT_SELECT=qt4 \
+ && ./Allwmake 2>&1 | tee log.Allwmake
 
 
 #Obtaining a summary
