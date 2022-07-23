@@ -93,6 +93,29 @@ RUN apt-get update && apt-get install -y \
     vim \
     time \
     cron gosu \
+       build-essential\
+   flex bison git-core cmake zlib1g-dev \
+#AEG:(No third party boost is provided (although can be downloaded) but will use the system installation):
+   libboost-system-dev libboost-thread-dev \
+#AEG:No OpenMPI because MPICH will be used (installed in the parent FROM image)
+#AEG:NoOpenMPI:   libopenmpi-dev openmpi-bin \
+   gnuplot libreadline-dev libncurses-dev \
+   libqt5x11extras5-dev libxt-dev qt5-default qttools5-dev curl \
+#NotIn8:   freeglut3-dev libqtwebkit-dev \
+#AEG:No scotch because it installs openmpi which later messes up with MPICH
+#    Therefore, ThirdParty scotch is the one to be installed and used by openfoam.
+#AEG:NoScotch:   libscotch-dev \
+#AEG:(No third party CGAL is provided (although can be downloaded) but will use the system installation):
+#NotIn8:   libcgal-dev \
+#AEG:These libraries are needed for CGAL (system and third party) (if needed, change libgmp-dev for libgmp3-dev):
+#NotIn8:   libgmp-dev libmpfr-dev\
+#AEG:Wiki additional qt suggestions:
+   qtbase5-dev \
+#AEG: Some more suggestions from the wiki instructions:
+   python python-dev \
+   libglu1-mesa-dev \
+#AEG:I found the following was needed to install  FlexLexer.hi (now included in the wiki instructions too):
+   libfl-dev \
     wget; \
     rm -rf /var/lib/apt/lists/*
 
@@ -118,43 +141,6 @@ ARG OFUSERDIR=/home/ofuser/OpenFOAM
 WORKDIR $OFINSTDIR
 
 
-#...........
-#Step 1.
-#Install necessary packages
-#
-#A warning may appear:
-#debconf: delaying package configuration, since apt-utils is not installed
-#But seems to be a bug:
-#https://github.com/phusion/baseimage-docker/issues/319
-#But harmless.
-RUN apt-get update && apt-get install -y \
-   build-essential\
-   flex bison git-core cmake zlib1g-dev \
-#AEG:(No third party boost is provided (although can be downloaded) but will use the system installation):
-   libboost-system-dev libboost-thread-dev \
-#AEG:No OpenMPI because MPICH will be used (installed in the parent FROM image)
-#AEG:NoOpenMPI:   libopenmpi-dev openmpi-bin \
-   gnuplot libreadline-dev libncurses-dev \
-   libqt5x11extras5-dev libxt-dev qt5-default qttools5-dev curl \
-#NotIn8:   freeglut3-dev libqtwebkit-dev \
-#AEG:No scotch because it installs openmpi which later messes up with MPICH
-#    Therefore, ThirdParty scotch is the one to be installed and used by openfoam.
-#AEG:NoScotch:   libscotch-dev \
-#AEG:(No third party CGAL is provided (although can be downloaded) but will use the system installation):
-#NotIn8:   libcgal-dev \
-#AEG:These libraries are needed for CGAL (system and third party) (if needed, change libgmp-dev for libgmp3-dev):
-#NotIn8:   libgmp-dev libmpfr-dev\
-#AEG:Wiki additional qt suggestions:
-   qtbase5-dev \
-#AEG: Some more suggestions from the wiki instructions:
-   python python-dev \
-   libglu1-mesa-dev \
-#AEG:I found the following was needed to install  FlexLexer.hi (now included in the wiki instructions too):
-   libfl-dev \
-#AEG:I need wget to download ParaView (because automatic download with curl is failing)
-   wget \
- && apt-get clean all \
- && rm -r /var/lib/apt/lists/*
 
 
 #...........
