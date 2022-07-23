@@ -1,5 +1,5 @@
-ARG OS_VERSION="18.04"
-ARG CUDA_VERSION="10.1"
+ARG OS_VERSION="16.04"
+ARG CUDA_VERSION="10.2"
 FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${OS_VERSION}
 
 LABEL maintainer="marco.delapierre@pawsey.org.au"
