@@ -4,9 +4,8 @@
 # 0. Initial main definition
 # Defining the base image to build from
 # In this case: mpich 3.1.4 and ubuntu 16.04; MPICH is needed for crays
-#FROM quay.io/pawsey/mpich-base:3.4.3_ubuntu16.04
 
-FROM ghcr.io/jiaqiwang969/10.2-16.06-cuda:sha-697a5cf
+FROM ghcr.io/jiaqiwang969/cuda-mpich-base-18.04-11.5:sha-33c6921
 
 LABEL maintainer="jiaqiwang969@gmail.com"
 
