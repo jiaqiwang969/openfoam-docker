@@ -21,7 +21,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: ghcr.io/jiaqiwang969/openfoam-2.3.x-cuda-mpich-base-18.04-11.5
+          images: ghcr.io/jiaqiwang969/openfoam-2.3.x-cuda-mpich-base-18.04-11.5-raw
           tag-sha: true
           tag-edge: false
           tag-latest: true

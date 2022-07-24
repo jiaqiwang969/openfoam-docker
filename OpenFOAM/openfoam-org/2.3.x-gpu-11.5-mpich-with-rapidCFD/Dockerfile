@@ -4,7 +4,7 @@
 # 0. Initial main definition
 # Defining the base image to build from
 # In this case: mpich 3.1.4 and ubuntu 16.04; MPICH is needed for crays
-FROM ghcr.io/jiaqiwang969/cuda-mpich-base-18.04-11.4:sha-33c6921
+FROM ghcr.io/jiaqiwang969/cuda-mpich-base-18.04-11.5:sha-33c6921
 
 LABEL maintainer="jiaqiwang969@gmail.com"
 #OpenFOAM version to install
@@ -251,6 +251,60 @@ RUN . ${OFBASHRC} \
 
 
 
+
+
+
+##INSTALL RapidCFD
+#...........
+#Step 1. Download
+#Change to the installation dir, clone OpenFOAM directories
+ARG OFVERSIONGIT=$OFVERSION
+WORKDIR $OFINSTDIR
+#Try git or https protocol:
+RUN git clone https://github.com/Atizar/RapidCFD-dev.git
+
+
+#...........
+#Step 2. Definitions for the prefs and bashrc files.
+ARG CFDPREFS=${OFINSTDIR}/RapidCFD-dev/etc/prefs.sh
+ARG CFDBASHRC=${OFINSTDIR}/RapidCFD-dev/etc/bashrc
+
+
+
+#...........
+#Defining the prefs.sh:
+RUN head -23 ${CFDBASHRC}/RapidCFD-dev/etc/config/example/prefs.sh > $OFPREFS \
+ && echo '#------------------------------------------------------------------------------' >> ${CFDPREFS} \
+ && echo 'export WM_MPLIB=SYSTEMMPI' >> ${CFDPREFS} \
+ && echo 'export MPI_ROOT="/usr"' >> ${CFDPREFS} \
+ && echo 'export MPI_ARCH_FLAGS="-DMPICH_SKIP_MPICXX"' >> ${CFDPREFS} \
+ && echo 'export MPI_ARCH_INC="-I${MPI_ROOT}/include"' >> ${CFDPREFS} \
+ && echo 'export MPI_ARCH_LIBS="-L${MPI_ROOT}/lib${WM_COMPILER_LIB_ARCH} -L${MPI_ROOT}/lib -lmpich -lrt"' >> ${CFDPREFS} \
+ && echo ''
+
+#...........
+#Modifying the bashrc file, the install and user directory is same as openfoam-2.3.x
+RUN cp ${OFBASHRC} ${OFBASHRC}.original \
+ && sed -i '/^foamInstall=$HOME.*/afoamInstall='"${OFINSTDIR}" ${CFDBASHRC} \
+ && sed -i '0,/^foamInstall=$HOME/s//# foamInstall=$HOME/' ${CFDBASHRC} \
+ && sed -i '/^export WM_PROJECT_USER_DIR=.*/aexport WM_PROJECT_USER_DIR="'"${OFUSERDIR}/ofuser"'-$WM_PROJECT_VERSION"' ${CFDBASHRC} \
+ && sed -i '0,/^export WM_PROJECT_USER_DIR/s//# export WM_PROJECT_USER_DIR/' ${CFDBASHRC} \
+ && echo ''
+
+
+#............
+#Modified compute capability 
+#In my case, A100-70 is use
+
+RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c \
+    sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
+ 
+#............
+#Compile
+ENV WM_NCOMPPROCS=4
+RUN . ${CFDBASHRC} \
+ && cd $OFINSTDIR/RapidCFD-dev \
+ && ./Allwmake 2>&1 | tee log.Allwmake
 
 
 
