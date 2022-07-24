@@ -273,7 +273,7 @@ ARG CFDBASHRC=${OFINSTDIR}/RapidCFD-dev/etc/bashrc
 
 #...........
 #Defining the prefs.sh:
-RUN head -23 ${CFDBASHRC}/RapidCFD-dev/etc/config/example/prefs.sh > $OFPREFS \
+RUN head -23 ${OFINSTDIR}/RapidCFD-dev/etc/config/example/prefs.sh > $OFPREFS \
  && echo '#------------------------------------------------------------------------------' >> ${CFDPREFS} \
  && echo 'export WM_MPLIB=SYSTEMMPI' >> ${CFDPREFS} \
  && echo 'export MPI_ROOT="/usr"' >> ${CFDPREFS} \

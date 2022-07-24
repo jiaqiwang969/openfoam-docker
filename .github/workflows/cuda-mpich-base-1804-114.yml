@@ -21,7 +21,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: ghcr.io/jiaqiwang969/openfoam-2.3.x-cuda-mpich-base-18.04-11.4-raw
+          images: ghcr.io/jiaqiwang969/openfoam-2.3.x-cuda-mpich-base-18.04-11.4
           tag-sha: true
           tag-edge: false
           tag-latest: true
@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           tags: ${{ steps.docker_meta.outputs.tags }} 
-          file: ./OpenFOAM/openfoam-org/2.3.x-gpu-11.4-mpich/Dockerfile
+          file: ./OpenFOAM/openfoam-org/2.3.x-gpu-11.4-mpich-with-rapidCFD/Dockerfile
           
           
       - name: Push image
@@ -51,4 +51,4 @@ jobs:
         with:
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
-          file: ./OpenFOAM/openfoam-org/2.3.x-gpu-11.4-mpich/Dockerfile
+          file: ./OpenFOAM/openfoam-org/2.3.x-gpu-11.4-mpich-with-rapidCFD/Dockerfile
