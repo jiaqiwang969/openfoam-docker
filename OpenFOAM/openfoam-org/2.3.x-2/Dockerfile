@@ -113,20 +113,13 @@ RUN apt-get update -qq\
 ARG OFVERSIONGIT=$OFVERSION
 WORKDIR $OFINSTDIR
 #Try git or https protocol:
-RUN git clone https://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
+RUN git clone  https://github.com/jiaqiwang969/RapidCFD-dev.git  OpenFOAM-${OFVERSIONGIT} \
  && git clone https://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
-
-
-RUN git clone https://github.com/jiaqiwang969/RapidCFD-dev.git 
-
-##RUN git clone git://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
-## && git clone git://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
 
 #...........
 #Step 3. Definitions for the prefs and bashrc files.
 ARG OFPREFS=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/prefs.sh
 ARG OFBASHRC=${OFINSTDIR}/OpenFOAM-${OFVERSION}/etc/bashrc
-ARG OFBASHRC_RapidCFD=${OFINSTDIR}/RapidCFD-dev/etc/bashrc
 
 #...........
 #Defining the prefs.sh:
@@ -239,13 +232,6 @@ RUN export CUDA_HOME=/usr/local/cuda \
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64 \
     export PATH=$PATH:$CUDA_HOME/bin
 RUN nvcc --version
-ENV  WM_NCOMPPROCS=4 
-RUN . ${OFBASHRC_RapidCFD} \
- && cd $WM_PROJECT_DIR \
- && ./Allwmake 2>&1 | tee log.Allwmake
-
-
-#OpenFOAM compilation
 ENV WM_NCOMPPROCS=4
 RUN . ${OFBASHRC} \
  && cd $WM_PROJECT_DIR \
