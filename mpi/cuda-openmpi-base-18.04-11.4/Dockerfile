@@ -17,25 +17,24 @@ RUN apt-get update -qq \
       && rm -r /var/lib/apt/lists/*
 
 
-# Build MPICH
+# Build OPENMPI
 
-ARG MPI_VERSION="3.4.3"
-#ARG MPI_CONFIGURE_OPTIONS="--enable-fast=all,O3 --prefix=/usr" works with 3.1.4, and 4.0.x
-ARG MPI_CONFIGURE_OPTIONS="--enable-fast=all,O3 --prefix=/usr --with-device=ch4:ofi"
+ARG MPI_VERSION="4.0.2"
+ARG MPI_CONFIGURE_OPTIONS="--enable-fast=all,O3 --prefix=/usr --with-cuda=/usr/local/cuda"
 ARG MPI_MAKE_OPTIONS="-j4"
 
-RUN mkdir -p /tmp/mpich-build \
-      && cd /tmp/mpich-build \
-      && wget http://www.mpich.org/static/downloads/${MPI_VERSION}/mpich-${MPI_VERSION}.tar.gz \
-      && tar xvzf mpich-${MPI_VERSION}.tar.gz \
-      && cd mpich-${MPI_VERSION}  \
+RUN mkdir -p /tmp/openmpi-build \
+      && cd /tmp/openmpi-build \
+      && MPI_VER_MM="${MPI_VERSION%.*}" \
+      && wget http://www.openmpi.org/software/ompi/v${MPI_VER_MM}/downloads/openmpi-${MPI_VERSION}.tar.bz2 \
+      && tar xjf openmpi-${MPI_VERSION}.tar.bz2 \
+      && cd openmpi-${MPI_VERSION}  \
       && ./configure ${MPI_CONFIGURE_OPTIONS} \
       && make ${MPI_MAKE_OPTIONS} \
       && make install \
       && ldconfig \
-      && cp -p /tmp/mpich-build/mpich-${MPI_VERSION}/examples/cpi /usr/bin/ \
       && cd / \
-      && rm -rf /tmp/mpich-build
+      && rm -rf /tmp/openmpi-build
 
 
 # Build OSU Benchmarks
@@ -62,10 +61,6 @@ RUN apt-get update -qq \
       && apt-get -y --no-install-recommends install patchelf strace ltrace \
       && apt-get clean all \
       && rm -r /var/lib/apt/lists/*
-
-
-# Quick Test
-RUN mpiexec -n 8 /usr/bin/cpi 2>&1 | tee log.cpi
 
 
 # Final settings
