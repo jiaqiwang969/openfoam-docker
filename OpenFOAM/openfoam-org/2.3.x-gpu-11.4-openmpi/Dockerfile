@@ -4,11 +4,9 @@
 # 0. Initial main definition
 # Defining the base image to build from
 # In this case: mpich 3.1.4 and ubuntu 16.04; MPICH is needed for crays
-
-FROM ghcr.io/jiaqiwang969/cuda-mpich-base-18.04-11.5:sha-33c6921
+FROM ghcr.io/jiaqiwang969/cuda-openmpi-base-18.04-11.4:sha-33c6921
 
 LABEL maintainer="jiaqiwang969@gmail.com"
-
 #OpenFOAM version to install
 ARG OFVERSION="2.3.x"
 #Using bash from now on
@@ -56,13 +54,13 @@ RUN echo "ofuser:${OFVERSION}" | chpasswd
 # III. INSTALLING OPENFOAM.
 #This section is for installing OpenFOAM
 #Will follow PARTIALLY the official installation instructions:
-#https://openfoam.org/download/2-4-0-source/
+#https://openfoam.org/download/2-3-0-source/
 #
-#Will follow PARTIALLY the instructions for OpenFOAM-2.4.x  available in the wiki:
-#https://openfoamwiki.net/index.php/Installation/Linux/OpenFOAM-2.4.x/Ubuntu#Ubuntu_16.04
+#Will follow PARTIALLY the instructions for OpenFOAM-2.3.x  available in the wiki:
+#https://openfoamwiki.net/index.php/Installation/Linux/OpenFOAM-2.3.x/Ubuntu#Ubuntu_16.04
 #
 #Then, Will follow a combination of both
-#(Also checking wiki for OpenFOAM-2.4.0)
+#(Also checking wiki for OpenFOAM-2.3.0)
 #
 #Where recipe deviates from the instructions mentioned above, comments from the maintainer are labelled as: AEG
 
@@ -112,8 +110,11 @@ RUN apt-get update -qq\
 ARG OFVERSIONGIT=$OFVERSION
 WORKDIR $OFINSTDIR
 #Try git or https protocol:
-RUN git clone  https://github.com/jiaqiwang969/RapidCFD-dev.git  OpenFOAM-${OFVERSIONGIT} \
+RUN git clone https://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
  && git clone https://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
+
+##RUN git clone git://github.com/OpenFOAM/OpenFOAM-${OFVERSIONGIT}.git \
+## && git clone git://github.com/OpenFOAM/ThirdParty-${OFVERSIONGIT}.git
 
 #...........
 #Step 3. Definitions for the prefs and bashrc files.
@@ -173,9 +174,43 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
 #--Dummy line:
  && echo ''
 
+#...........
+#Step 4.
+#Install one or the other: paraview or VTK
+#Install paraview or VTK for runTimePostprocessing of OpenFOAM to properly compile
+#Install paraview for graphical postprocessing to be available in the container 
 
+#AEG: Have not tried the VTK only installation yet
 
+##Download paraview (taken from wiki instructions)
+RUN . ${OFBASHRC} \
+ && cd $WM_THIRD_PARTY_DIR \
+ && mkdir download \
+ && wget --no-check-certificate -P download http://www.paraview.org/files/v4.1/ParaView-v4.1.0-source.tar.gz \
+ && tar -xzf download/ParaView-v4.1.0-source.tar.gz \
+ && mv ParaView-v4.1.0 ParaView-4.1.0 \
+ && rm -rf download
 
+##Paraview compilation (Official instructions for 2.3)
+#AEG: (This procedure is not working yet, needs some fix that I have not found) 
+#AEG:(Also take a look into the ThirdParty-xx/README.* files)
+##--##:RUN . ${OFBASHRC} \
+##--##: && cd $WM_THIRD_PARTY_DIR \
+##--##: && ./makeParaView4 | tee log.makePV
+
+##Paraview compilation (Adapted alternative instructions from OpenFoamWiki)
+RUN . ${OFBASHRC} \
+ && cd $WM_THIRD_PARTY_DIR \
+ && export QT_SELECT=qt4 \
+ && sed -i -e 's=//#define GLX_GLXEXT_LEGACY=#define GLX_GLXEXT_LEGACY=' ParaView-4.1.0/VTK/Rendering/OpenGL/vtkXOpenGLRenderWindow.cxx \
+ && cd ParaView-4.1.0 \
+ && wget --no-check-certificate http://www.paraview.org/pipermail/paraview/attachments/20140210/464496cc/attachment.bin -O Fix.patch \
+ && patch -p1 < Fix.patch \
+ && cd VTK \
+ && wget --no-check-certificate https://github.com/gladk/VTK/commit/ef22d3d69421581b33bc0cd94b647da73b61ba96.patch -O Fix2.patch \
+ && patch -p1 < Fix2.patch \
+ && cd $WM_THIRD_PARTY_DIR \
+ && ./makeParaView4 -python -mpi -python-lib /usr/lib/x86_64-linux-gnu/libpython2.7.so.1.0 2>&1 | tee log.makePV
 
 #...........
 #Step 5.
@@ -213,7 +248,7 @@ RUN . ${OFBASHRC} \
 #...........
 #Step 6.
 
-#Fix for the flex version to be checked (idea obtained from the wiki instructions for 2.4.0 ubunut 16.04)
+#Fix for the flex version to be checked (idea obtained from the wiki instructions for 2.3.0 ubunut 16.04)
 #Because flex is causing problems for the compilation of openfoam also for this version
 RUN . ${OFBASHRC} \
  && cd $WM_PROJECT_DIR \
@@ -221,22 +256,12 @@ RUN . ${OFBASHRC} \
  && find src applications -name "*.L" -type f | xargs sed -i -e \
     's=\(YY\_FLEX\_SUBMINOR\_VERSION\)=YY_FLEX_MINOR_VERSION < 6 \&\& \1='
 
-
-
-
-
-#RapidCFD-dev compilation
-#https://github.com/Atizar/RapidCFD-dev/issues/93
-RUN export CUDA_HOME=/usr/local/cuda \
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64 \
-    export PATH=$PATH:$CUDA_HOME/bin
-RUN nvcc --version
+#OpenFOAM compilation 
 ENV WM_NCOMPPROCS=4
 RUN . ${OFBASHRC} \
  && cd $WM_PROJECT_DIR \
  && export QT_SELECT=qt4 \
  && ./Allwmake 2>&1 | tee log.Allwmake
-
 
 #Obtaining a summary
 RUN . ${OFBASHRC} \
@@ -259,6 +284,37 @@ RUN . ${OFBASHRC} \
 RUN . ${OFBASHRC} \
  && cd $WM_PROJECT_DIR \
  && printenv > environment_vars_raw.env
+
+
+
+
+
+
+
+##INSTALL RapidCFD
+#...........
+#Step 1. Download
+#Change to the installation dir, clone OpenFOAM directories
+ARG OFVERSIONGIT=$OFVERSION
+WORKDIR $OFINSTDIR
+#Try git or https protocol:
+RUN git clone https://github.com/Atizar/RapidCFD-dev.git
+
+#modified compute capability , A100-70
+
+RUN sed -i '/sm_30/sm_70' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c
+RUN sed -i '/sm_30/sm_70' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
+ 
+#compile
+ENV WM_NCOMPPROCS=4
+RUN source $OFINSTDIR/RapidCFD-dev/etc/bashrc \
+ && cd $OFINSTDIR/RapidCFD-dev \
+ && ./Allwmake 2>&1 | tee log.Allwmake
+
+
+
+
+
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------

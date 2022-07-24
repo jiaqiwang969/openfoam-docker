@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           tags: ${{ steps.docker_meta.outputs.tags }} 
-          file: ./OpenFOAM/openfoam-org/cuda-mpich-base-18.04-11.4/Dockerfile
+          file: ./OpenFOAM/openfoam-org/2.3.x-gpu-11.4-mpich/Dockerfile
           
           
       - name: Push image
@@ -51,4 +51,4 @@ jobs:
         with:
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
-          file: ./OpenFOAM/openfoam-org/cuda-mpich-base-18.04-11.4/Dockerfile
+          file: ./OpenFOAM/openfoam-org/2.3.x-gpu-11.4-mpich/Dockerfile
