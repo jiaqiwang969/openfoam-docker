@@ -302,8 +302,8 @@ RUN git clone https://github.com/Atizar/RapidCFD-dev.git
 
 #modified compute capability , A100-70
 
-RUN sed -i '/sm_30/sm_70' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c
-RUN sed -i '/sm_30/sm_70' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
+RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c
+RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
  
 #compile
 ENV WM_NCOMPPROCS=4
