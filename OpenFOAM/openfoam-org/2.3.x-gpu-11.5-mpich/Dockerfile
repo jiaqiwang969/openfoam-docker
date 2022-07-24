@@ -174,43 +174,6 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
 #--Dummy line:
  && echo ''
 
-#...........
-#Step 4.
-#Install one or the other: paraview or VTK
-#Install paraview or VTK for runTimePostprocessing of OpenFOAM to properly compile
-#Install paraview for graphical postprocessing to be available in the container 
-
-#AEG: Have not tried the VTK only installation yet
-
-##Download paraview (taken from wiki instructions)
-RUN . ${OFBASHRC} \
- && cd $WM_THIRD_PARTY_DIR \
- && mkdir download \
- && wget --no-check-certificate -P download http://www.paraview.org/files/v4.1/ParaView-v4.1.0-source.tar.gz \
- && tar -xzf download/ParaView-v4.1.0-source.tar.gz \
- && mv ParaView-v4.1.0 ParaView-4.1.0 \
- && rm -rf download
-
-##Paraview compilation (Official instructions for 2.3)
-#AEG: (This procedure is not working yet, needs some fix that I have not found) 
-#AEG:(Also take a look into the ThirdParty-xx/README.* files)
-##--##:RUN . ${OFBASHRC} \
-##--##: && cd $WM_THIRD_PARTY_DIR \
-##--##: && ./makeParaView4 | tee log.makePV
-
-##Paraview compilation (Adapted alternative instructions from OpenFoamWiki)
-RUN . ${OFBASHRC} \
- && cd $WM_THIRD_PARTY_DIR \
- && export QT_SELECT=qt4 \
- && sed -i -e 's=//#define GLX_GLXEXT_LEGACY=#define GLX_GLXEXT_LEGACY=' ParaView-4.1.0/VTK/Rendering/OpenGL/vtkXOpenGLRenderWindow.cxx \
- && cd ParaView-4.1.0 \
- && wget --no-check-certificate http://www.paraview.org/pipermail/paraview/attachments/20140210/464496cc/attachment.bin -O Fix.patch \
- && patch -p1 < Fix.patch \
- && cd VTK \
- && wget --no-check-certificate https://github.com/gladk/VTK/commit/ef22d3d69421581b33bc0cd94b647da73b61ba96.patch -O Fix2.patch \
- && patch -p1 < Fix2.patch \
- && cd $WM_THIRD_PARTY_DIR \
- && ./makeParaView4 -python -mpi -python-lib /usr/lib/x86_64-linux-gnu/libpython2.7.so.1.0 2>&1 | tee log.makePV
 
 #...........
 #Step 5.
@@ -300,14 +263,46 @@ WORKDIR $OFINSTDIR
 #Try git or https protocol:
 RUN git clone https://github.com/Atizar/RapidCFD-dev.git
 
-#modified compute capability , A100-70
 
-RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c
-RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
+#...........
+#Step 2. Definitions for the prefs and bashrc files.
+ARG CFDPREFS=${OFINSTDIR}/RapidCFD-dev/etc/prefs.sh
+ARG CFDBASHRC=${OFINSTDIR}/RapidCFD-dev/etc/bashrc
+
+
+
+#...........
+#Defining the prefs.sh:
+RUN head -23 ${CFDBASHRC}/RapidCFD-dev/etc/config/example/prefs.sh > $OFPREFS \
+ && echo '#------------------------------------------------------------------------------' >> ${CFDPREFS} \
+ && echo 'export WM_MPLIB=SYSTEMMPI' >> ${CFDPREFS} \
+ && echo 'export MPI_ROOT="/usr"' >> ${CFDPREFS} \
+ && echo 'export MPI_ARCH_FLAGS="-DMPICH_SKIP_MPICXX"' >> ${CFDPREFS} \
+ && echo 'export MPI_ARCH_INC="-I${MPI_ROOT}/include"' >> ${CFDPREFS} \
+ && echo 'export MPI_ARCH_LIBS="-L${MPI_ROOT}/lib${WM_COMPILER_LIB_ARCH} -L${MPI_ROOT}/lib -lmpich -lrt"' >> ${CFDPREFS} \
+ && echo ''
+
+#...........
+#Modifying the bashrc file, the install and user directory is same as openfoam-2.3.x
+RUN cp ${OFBASHRC} ${OFBASHRC}.original \
+ && sed -i '/^foamInstall=$HOME.*/afoamInstall='"${OFINSTDIR}" ${CFDBASHRC} \
+ && sed -i '0,/^foamInstall=$HOME/s//# foamInstall=$HOME/' ${CFDBASHRC} \
+ && sed -i '/^export WM_PROJECT_USER_DIR=.*/aexport WM_PROJECT_USER_DIR="'"${OFUSERDIR}/ofuser"'-$WM_PROJECT_VERSION"' ${CFDBASHRC} \
+ && sed -i '0,/^export WM_PROJECT_USER_DIR/s//# export WM_PROJECT_USER_DIR/' ${CFDBASHRC} \
+ && echo ''
+
+
+#............
+#Modified compute capability 
+#In my case, A100-70 is use
+
+RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c \
+    sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
  
-#compile
+#............
+#Compile
 ENV WM_NCOMPPROCS=4
-RUN source $OFINSTDIR/RapidCFD-dev/etc/bashrc \
+RUN . ${CFDBASHRC} \
  && cd $OFINSTDIR/RapidCFD-dev \
  && ./Allwmake 2>&1 | tee log.Allwmake
 
