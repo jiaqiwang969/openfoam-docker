@@ -298,6 +298,14 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
 
 RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c \
 &&    sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
+
+
+
+#............
+#fix bug in cuda-11.4 env, ref:https://github.com/Atizar/RapidCFD-dev/issues/92
+
+RUN sed -i 's/hitPoint_(vector::zero)/hitPoint_(vector(0,0,0))/g' $OFINSTDIR/RapidCFD-dev/src/OpenFOAM/meshes/primitiveShapes/objectHit/PointHit.H
+
  
 #............
 #Compile
