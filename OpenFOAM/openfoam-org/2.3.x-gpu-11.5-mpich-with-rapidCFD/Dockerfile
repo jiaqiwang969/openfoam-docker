@@ -220,17 +220,17 @@ RUN . ${OFBASHRC} \
     's=\(YY\_FLEX\_SUBMINOR\_VERSION\)=YY_FLEX_MINOR_VERSION < 6 \&\& \1='
 
 #OpenFOAM compilation 
-ENV WM_NCOMPPROCS=4
-RUN . ${OFBASHRC} \
- && cd $WM_PROJECT_DIR \
- && export QT_SELECT=qt4 \
- && ./Allwmake 2>&1 | tee log.Allwmake
+#ENV WM_NCOMPPROCS=4
+#RUN . ${OFBASHRC} \
+# && cd $WM_PROJECT_DIR \
+# && export QT_SELECT=qt4 \
+# && ./Allwmake 2>&1 | tee log.Allwmake
 
 #Obtaining a summary
-RUN . ${OFBASHRC} \
- && cd $WM_PROJECT_DIR \
- && export QT_SELECT=qt4 \
- && ./Allwmake 2>&1 | tee log.AllwmakeSummary
+#RUN . ${OFBASHRC} \
+# && cd $WM_PROJECT_DIR \
+# && export QT_SELECT=qt4 \
+# && ./Allwmake 2>&1 | tee log.AllwmakeSummary
 
 #...........
 #Step 7.
@@ -239,14 +239,14 @@ RUN . ${OFBASHRC} \
 #...........
 #Step 8.
 ##Checking if openfoam is working
-RUN . ${OFBASHRC} \
- && cd $WM_PROJECT_DIR \
- && icoFoam -help 2>&1 | tee log.icoFoam
+#RUN . ${OFBASHRC} \
+# && cd $WM_PROJECT_DIR \
+# && icoFoam -help 2>&1 | tee log.icoFoam
 
 #Writing the environment variables for the installation so far:
-RUN . ${OFBASHRC} \
- && cd $WM_PROJECT_DIR \
- && printenv > environment_vars_raw.env
+#RUN . ${OFBASHRC} \
+# && cd $WM_PROJECT_DIR \
+# && printenv > environment_vars_raw.env
 
 
 
@@ -301,7 +301,7 @@ RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c \
  
 #............
 #Compile
-ENV WM_NCOMPPROCS=4
+ENV WM_NCOMPPROCS=8
 RUN . ${CFDBASHRC} \
  && cd $OFINSTDIR/RapidCFD-dev \
  && ./Allwmake 2>&1 | tee log.Allwmake
