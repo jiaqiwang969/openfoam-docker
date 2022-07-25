@@ -297,7 +297,7 @@ RUN cp ${OFBASHRC} ${OFBASHRC}.original \
 #In my case, A100-70 is use
 
 RUN sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c \
-    sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
+&&    sed -i 's/sm_30/sm_70/g' $OFINSTDIR/RapidCFD-dev/wmake/rules/linux64Nvcc/c++
  
 #............
 #Compile
