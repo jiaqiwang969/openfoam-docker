@@ -39,12 +39,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_PASSWORD }}
           
-      - name: Build image
-        uses: docker/build-push-action@v2
-        with:
-          tags: ${{ steps.docker_meta.outputs.tags }} 
-          file: ./OpenFOAM/openfoam-org/2.3.x-gpu-11.5-mpich-with-rapidCFD/Dockerfile
-          
           
       - name: Push image
         uses: docker/build-push-action@v2
