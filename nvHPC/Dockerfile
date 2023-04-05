@@ -29,16 +29,11 @@ RUN apt-get update -y && \
 
 RUN mkdir -p /usr/share/keyrings && \
 wget -qO - https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK | gpg --dearmor -o /usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg && \
-echo "deb [signed-by=/usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" >> /etc/apt/sources.list.d/hpccm.list && \
-apt-get update -y &&     \
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+echo "deb [signed-by=/usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" >> /etc/apt/sources.list.d/hpccm.list 
+RUN apt-get update -y &&     
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 nvhpc-20-7-cuda-multi && \
 rm -rf /var/lib/apt/lists/* 
-# RUN echo "deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" >> /etc/apt/sources.list.d/hpccm.list && \
-#     apt-get update -y && \
-#     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-#         nvhpc-20-7-cuda-multi && \
-#     rm -rf /var/lib/apt/lists/*
 RUN apt-get update -y   
 RUN wget https://developer.download.nvidia.com/hpc-sdk/20.7/nvhpc-20-7_20.7_amd64.deb \
      https://developer.download.nvidia.com/hpc-sdk/20.7/nvhpc-20-7-cuda-multi_20.7_amd64.deb
