@@ -23,9 +23,14 @@ RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates \
         gnupg \
-        wget && \
+        wget \
+        gcc \ 
+        g++ \ 
+        gfortran \
+        libnuma1 \
+        libatomic1 && \
     rm -rf /var/lib/apt/lists/*
-RUN apt-get install gcc g++ gfortran libnuma1 libatomic1
+RUN apt-get update -y   
 RUN wget https://developer.download.nvidia.com/hpc-sdk/20.7/nvhpc-20-7_20.7_amd64.deb \
      https://developer.download.nvidia.com/hpc-sdk/20.7/nvhpc-20-7-cuda-multi_20.7_amd64.deb
 RUN apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-20-7-cuda-multi_20.7_amd64.deb
