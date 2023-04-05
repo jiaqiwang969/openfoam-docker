@@ -25,11 +25,9 @@ RUN apt-get update -y && \
         gnupg \
         wget && \
     rm -rf /var/lib/apt/lists/*
-RUN echo "deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /" >> /etc/apt/sources.list.d/hpccm.list && \
-    apt-get update -y && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        nvhpc-20-7-cuda-multi && \
-    rm -rf /var/lib/apt/lists/*
+RUN wget https://developer.download.nvidia.com/hpc-sdk/20.7/nvhpc-20-7_20.7_amd64.deb \
+    https://developer.download.nvidia.com/hpc-sdk/20.7/nvhpc-2020_20.7-cuda-multi_21.7_amd64.deb
+RUN apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7--cuda-multi_21.7_amd64.deb
 ENV CPATH=/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/comm_libs/nvshmem/include:/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/comm_libs/nccl/include:/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/compilers/extras/qd/include/qd:/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/math_libs/include:$CPATH \
     LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/compilers/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/cuda/lib64:$LD_LIBRARY_PATH \
     MANPATH=/opt/nvidia/hpc_sdk/Linux_x86_64/20.7/compilers/man:$MANPATH \
