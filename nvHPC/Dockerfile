@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.5.1-devel-ubuntu20.04
+FROM nvcr.io/nvidia/nvhpc:22.9-devel-cuda_multi-ubuntu22.04
 
 # Cmake
 RUN apt-get update -y && \
