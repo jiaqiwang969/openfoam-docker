@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.5-devel-ubuntu20.04
+FROM nvidia/cuda:11.5.0-devel-ubuntu20.04
 
 LABEL com.pyfr.version="1.8.0"
 LABEL com.python.version="3.5"
