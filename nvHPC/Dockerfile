@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y apt-utils git curl cmake g++ gfortran p
 
 RUN git clone https://github.com/flexi-framework/hopr.git
 
+RUN cd hopr
 RUN mkdir build
 
 RUN cd build
