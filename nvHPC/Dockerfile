@@ -1,30 +1,99 @@
-FROM ubuntu:20.04
+FROM dafoam/prerequisites:latest
 
-ENV DEBIAN_FRONTEND noninteractive
+# Swith to dafoamuser
+USER dafoamuser
 
-RUN apt-get update && apt-get install -y apt-utils git curl cmake g++ gfortran python3 python3-numpy python3-scipy python3-pip swig clang-tidy emacs-nox valgrind texlive texlive-latex-recommended texlive-latex-extra texinfo libreoffice fonts-cmu libpetsc-complex-dev libslepc-complex3.12-dev python3-dev libopenblas-dev libfltk1.3-dev libfreetype6-dev libgl1-mesa-dev libxi-dev libxmu-dev mesa-common-dev tcl-dev tk-dev libhdf5-dev libcgns-dev libxft-dev libxinerama-dev libxcursor-dev libxfixes-dev libocct-foundation-dev libocct-data-exchange-dev libocct-ocaf-dev libopenmpi-dev libboost-dev cargo clang gcovr && apt-get clean
+ENV HOME=/home/dafoamuser
 
-RUN git clone https://github.com/flexi-framework/hopr.git
+# f2py
+ENV PATH=$PATH:$HOME/.local/bin
+# OpenMPI-1.10.7
+ENV MPI_INSTALL_DIR=$HOME/packages/openmpi-1.10.7/opt-gfortran
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_INSTALL_DIR/lib
+ENV PATH=$MPI_INSTALL_DIR/bin:$PATH
+# Petsc-3.11.4
+ENV PETSC_DIR=$HOME/packages/petsc-3.11.4
+ENV PETSC_ARCH=real-opt
+ENV PATH=$PETSC_DIR/$PETSC_ARCH/bin:$PATH
+ENV PATH=$PETSC_DIR/$PETSC_ARCH/include:$PATH
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PETSC_DIR/$PETSC_ARCH/lib
+ENV PETSC_LIB=$PETSC_DIR/$PETSC_ARCH/lib
+# CGNS-3.3.0
+ENV CGNS_HOME=$HOME/packages/CGNS-3.3.0/opt-gfortran
+ENV PATH=$PATH:$CGNS_HOME/bin
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CGNS_HOME/lib
 
-RUN pwd
-RUN ls
+# create the repo directory
+RUN mkdir -p $HOME/repos
 
-RUN cd ~/hopr
+# MACH framework
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/baseclasses && \
+    cd baseclasses && \
+    pip install .
 
-RUN pwd
-RUN ls
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/pyspline && \
+    cd pyspline && \
+    cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && \
+    make && \
+    pip install .
 
-RUN mkdir build
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/pygeo && \
+    cd pygeo && \
+    pip install .
 
-RUN pwd
-RUN ls
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/multipoint && \
+    cd multipoint && \
+    pip install .
 
-RUN cd build
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/pyhyp && \
+    cd pyhyp && \
+    cp -r config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk config/config.mk && \
+    make && \
+    pip install .
 
-RUN pwd
-RUN ls
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/cgnsutilities && \
+    cd cgnsutilities && \
+    cp config.mk.info config.mk && \
+    make && \
+    pip install .
 
-RUN cmake ..
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/idwarp && \
+    cd idwarp && \
+    cp -r config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk config/config.mk && \
+    make && \
+    pip install .
 
-RUN make install
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/pyoptsparse && \
+    cd pyoptsparse && \
+    pip install .
 
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/adflow && \
+    cd adflow && \
+    cp -r config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && \
+    make && \
+    pip install .
+
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/pyofm && \
+    cd pyofm && \
+    . $HOME/OpenFOAM/OpenFOAM-v1812/etc/bashrc && \
+    make && \
+    pip install .
+
+RUN cd $HOME/repos && \
+    git clone https://github.com/mdolab/dafoam && \
+    cd dafoam && \
+    . $HOME/OpenFOAM/OpenFOAM-v1812/etc/bashrc && \
+    ./Allmake && \
+    pip install .
+
+RUN rm -rf $HOME/repos
