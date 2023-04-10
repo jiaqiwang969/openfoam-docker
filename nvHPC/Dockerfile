@@ -9,7 +9,7 @@ RUN git clone https://github.com/flexi-framework/hopr.git
 RUN pwd
 RUN ls
 
-RUN cd hopr
+RUN cd ~/hopr
 
 RUN pwd
 RUN ls
