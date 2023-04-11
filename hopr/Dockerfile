@@ -58,13 +58,11 @@ RUN cd /tmp && \
     rm -rf /tmp/pyCGNS
 
 # Install dopr from source
-RUN cd /tmp && \
+RUN cd /opt && \
     git clone --depth=1 -b master https://github.com/flexi-framework/hopr.git && \
     cd hopr && \
     mkdir build && \
     cd build && \
     cmake .. -DLIBS_BUILD_HDF5=OFF && \
-    make -j2 && make install && \
-    rm -rf /tmp/hopr
-
+    make -j2 && make install
 
