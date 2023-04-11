@@ -1,30 +1,56 @@
-FROM debian:bullseye as devel
+FROM gcr.io/cmg-build-env/cmg-gcc-6.5.0-openmpi-4.0.2-x86_hdf5 as devel
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update -y && \
-    apt install -y wget git libssl-dev build-essential gfortran cmake
+ADD ./ /tmp/hopr/
 
+RUN apt-get update -y && \
+    apt-get install -y wget git
 
 # BLAS and Lapack
-RUN wget https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz --directory-prefix=/tmp/ &&\
+RUN . /etc/profile.d/z10_spack_environment.sh && \
+    wget https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz --directory-prefix=/tmp/ &&\
     cd /tmp && tar -xvzf v3.9.0.tar.gz && mkdir -p /tmp/lapack-3.9.0/build && \
     cd /tmp/lapack-3.9.0/build && \
-    /usr/local/bin/cmake -DCMAKE_INSTALL_PREFIX=/apps/hopr /tmp/lapack-3.9.0 &&  \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/view /tmp/lapack-3.9.0 &&  \
     make && make install &&\
     rm -rf /tmp/lapack-3.9.0
 
-ENV LD_LIBRARY_PATH=/apps/hopr/lib:$LD_LIBRARY_PATH \
-    PATH=/apps/hopr/bin:$PATH
+# CGNS
+RUN . /etc/profile.d/z10_spack_environment.sh && \
+    wget https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz --directory-prefix=/tmp/ &&\
+    cd /tmp && tar -xvzf v3.9.0.tar.gz && mkdir -p /tmp/lapack-3.9.0/build && \
+    cd /tmp/lapack-3.9.0/build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/view /tmp/lapack-3.9.0 &&  \
+    make && make install &&\
+    rm -rf /tmp/lapack-3.9.0
+
 
 #HOPR
-RUN git clone https://github.com/FluidNumerics/hopr.git /tmp/hopr && \
+RUN . /etc/profile.d/z10_spack_environment.sh && \
     mkdir /tmp/hopr/build && \
     cd /tmp/hopr/build && \
-    /usr/local/bin/cmake -DCMAKE_INSTALL_PREFIX=/apps/hopr /tmp/hopr &&\
+    HDF5_ROOT=/opt/view CGNS_ROOT= cmake -DBUILD_HDF5= -DBUILD_CGNS= -DCMAKE_INSTALL_PREFIX=/opt/view /tmp/hopr &&\
     make && make install &&\
+    mkdir -p /opt/view/share &&\
+    cp -r /tmp/hopr/tutorials /opt/view/share &&\
     rm -rf /tmp/hopr
 
-FROM debian:bullseye
+FROM gcr.io/cmg-build-env/cmg-gcc-6.5.0-openmpi-4.0.2-x86_hdf5
 
-COPY --from=devel /apps/ /apps/
+COPY --from=devel /opt/ /opt/
+LABEL maintainer="joe@fluidnumerics.com"
+
+COPY ./hopr.py /app
+
+# Install python and flask
+RUN apt-get update -y \
+&&  apt-get install -y python3 python3-pip \
+&&  pip3 install Flask google-cloud-storage gunicorn
+
+
+ENV PORT 8080
+ENV PYTHONBUFFERED True
+
+WORKDIR /app
+ENTRYPOINT "gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 hopr:app"
