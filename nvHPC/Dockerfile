@@ -89,7 +89,7 @@ RUN cd /tmp && \
     python3 setup.py install && \
     rm -rf /tmp/moab
 
-ADD image/home $DOCKER_HOME
+ADD ~/ $DOCKER_HOME
 
 ########################################################
 # Customization for user
