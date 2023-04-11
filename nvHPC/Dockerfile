@@ -1,35 +1,107 @@
-FROM jameshclrk/parmetis:latest
+FROM unifem/fenics-desktop:latest
+LABEL maintainer "Xiangmin Jiao <xmjiao@gmail.com>"
 
-MAINTAINER James Clark <james.clark@stfc.ac.uk>
+USER root
+WORKDIR /tmp
 
-ARG HDF5_VERSION=1.8.21
-ARG CGNS_VERSION=3.3.1
-ARG HDF5_INSTALL_DIR="/opt/hdf5"
-ARG CGNS_INSTALL_DIR="/opt/cgns"
+# Install system packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        automake autogen autoconf libtool \
+        libhdf5-100 \
+        libhdf5-dev \
+        libhdf5-openmpi-100 \
+        libhdf5-openmpi-dev \
+        hdf5-tools \
+        libnetcdf-dev netcdf-bin \
+        libmetis5 libmetis-dev \
+        \
+        tk-dev \
+        libglu1-mesa-dev \
+        libxmu-dev && \
+    apt-get clean && \
+    \
+    pip3 install -U \
+        cython \
+        nose && \
+    \
+    mkdir -p /usr/lib/hdf5-openmpi && \
+    ln -s -f /usr/include/hdf5/openmpi /usr/lib/hdf5-openmpi/include && \
+    ln -s -f /usr/lib/x86_64-linux-gnu/hdf5/openmpi /usr/lib/hdf5-openmpi/lib && \
+    \
+    mkdir -p /usr/lib/hdf5-serial && \
+    ln -s -f /usr/include/hdf5/serial /usr/lib/hdf5-serial/include && \
+    ln -s -f /usr/lib/x86_64-linux-gnu/hdf5/serial /usr/lib/hdf5-serial/lib && \
+    \
+    rm -rf /var/lib/apt/lists/* /tmp/*
 
-RUN set -x \
-    && curl -fSL "https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-$HDF5_VERSION.tar.gz" -o hdf5.tar.gz \
-	&& mkdir -p /usr/src/hdf5 \
-	&& tar -xf hdf5.tar.gz -C /usr/src/hdf5 --strip-components=1 \
-	&& rm hdf5.tar.gz* \
-	&& cd /usr/src/hdf5 \
-	&& CC=mpicc ./configure --prefix=${HDF5_INSTALL_DIR} --enable-parallel \
-	&& make -j"$(nproc)" \
-	&& make install \
-	&& rm -rf /usr/src/hdf5
+# Install CGNS from source with parallel enabled
+RUN cd /tmp && \
+    git clone --depth=1 -b master https://github.com/CGNS/CGNS.git && \
+    cd CGNS/src && \
+    export CC="mpicc" && \
+    export LIBS="-Wl,--no-as-needed -ldl -lz -lsz -lpthread" && \
+    ./configure --enable-64bit --with-zlib --with-hdf5=/usr/lib/hdf5-openmpi \
+        --enable-parallel --enable-cgnstools --enable-lfs --enable-shared && \
+    sed -i 's/TKINCS =/TKINCS = -I\/usr\/include\/tcl/' cgnstools/make.defs && \
+    make -j2 && make install && \
+    rm -rf /tmp/CGNS
 
-RUN set -x \
-	&& curl -fSL "https://github.com/CGNS/CGNS/archive/v$CGNS_VERSION.tar.gz" -o cgns.tar.gz \
-	&& mkdir -p /usr/src/cgns \
-	&& tar -xf cgns.tar.gz -C /usr/src/cgns --strip-components=1 \
-	&& rm cgns.tar.gz* \
-	&& cd /usr/src/cgns \
-	&& mkdir build && cd build \
-	&& PATH="${HDF5_INSTALL_DIR}/bin:$PATH" cmake -DCGNS_ENABLE_HDF5=ON -DCMAKE_INSTALL_PREFIX:PATH=${CGNS_INSTALL_DIR} -DHDF5_NEED_MPI=ON .. \
-	&& make -j"$(nproc)" \
-	&& make install \
-	&& rm -rf /usr/src/cgns
+# Install pyCGNS from source
+RUN cd /tmp && \
+    git clone --depth=1 -b master https://github.com/unifem/pyCGNS.git && \
+    cd pyCGNS && \
+    python3 setup.py build \
+        --includes=/usr/include/hdf5/openmpi:/usr/include/openmpi \
+        --libraries=/usr/lib/x86_64-linux-gnu/hdf5/openmpi && \
+    python3 setup.py install && \
+    rm -rf /tmp/pyCGNS
 
-ENV LD_LIBRARY_PATH="${CGNS_INSTALL_DIR}/lib:${HDF5_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}" PATH="${CGNS_INSTALL_DIR}/bin:${HDF5_INSTALL_DIR}/bin:$PATH"
-ENV HDF5_DIR="${HDF5_INSTALL_DIR}"
-ENV CGNS_DIR="${CGNS_INSTALL_DIR}"
+# Install MOAB and pymoab from sources
+RUN cd /tmp && \
+    git clone --depth=1 https://bitbucket.org/fathomteam/moab.git && \
+    cd moab && \
+    autoreconf -fi && \
+    ./configure \
+        --prefix=/usr/local \
+        --with-mpi \
+        CC=mpicc \
+        CXX=mpicxx \
+        FC=mpif90 \
+        F77=mpif77 \
+        --enable-optimize \
+        --enable-shared=yes \
+        --with-blas=-lopenblas \
+        --with-lapack=-lopenblas \
+        --with-scotch=/usr/lib \
+        --with-metis=/usr/lib/x86_64-linux-gnu \
+        --with-eigen3=/usr/include/eigen3 \
+        --with-x \
+        --with-cgns \
+        --with-netcdf \
+        --with-hdf5=/usr/lib/hdf5-openmpi \
+        --with-hdf5-ldflags="-L/usr/lib/hdf5-openmpi/lib" \
+        --enable-ahf=yes \
+        --enable-tools=yes && \
+    make -j2 && make install && \
+    \
+    cd pymoab && \
+    python3 setup.py install && \
+    rm -rf /tmp/moab
+
+ADD image/home $DOCKER_HOME
+
+########################################################
+# Customization for user
+########################################################
+
+USER $DOCKER_USER
+WORKDIR $DOCKER_HOME
+USER root
+RUN pip install --upgrade pip
+RUN pip install ipython
+RUN pip install pyyaml
+RUN pip install numba
+RUN pip install scipy
+RUN pip install XlsxWriter==1.1.2
+RUN pip install hdmedians
