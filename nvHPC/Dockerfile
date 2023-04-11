@@ -89,19 +89,5 @@ RUN cd /tmp && \
     python3 setup.py install && \
     rm -rf /tmp/moab
 
-ADD ~/ $DOCKER_HOME
 
-########################################################
-# Customization for user
-########################################################
 
-USER $DOCKER_USER
-WORKDIR $DOCKER_HOME
-USER root
-RUN pip install --upgrade pip
-RUN pip install ipython
-RUN pip install pyyaml
-RUN pip install numba
-RUN pip install scipy
-RUN pip install XlsxWriter==1.1.2
-RUN pip install hdmedians
