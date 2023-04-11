@@ -1,99 +1,38 @@
-FROM dafoam/prerequisites:latest
+FROM debian:bullseye as devel
 
-# Swith to dafoamuser
-USER dafoamuser
+ENV DEBIAN_FRONTEND=noninteractive
 
-ENV HOME=/home/dafoamuser
+RUN apt update -y && \
+    apt install -y wget git libssl-dev build-essential gfortran
 
-# f2py
-ENV PATH=$PATH:$HOME/.local/bin
-# OpenMPI-1.10.7
-ENV MPI_INSTALL_DIR=$HOME/packages/openmpi-1.10.7/opt-gfortran
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_INSTALL_DIR/lib
-ENV PATH=$MPI_INSTALL_DIR/bin:$PATH
-# Petsc-3.11.4
-ENV PETSC_DIR=$HOME/packages/petsc-3.11.4
-ENV PETSC_ARCH=real-opt
-ENV PATH=$PETSC_DIR/$PETSC_ARCH/bin:$PATH
-ENV PATH=$PETSC_DIR/$PETSC_ARCH/include:$PATH
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PETSC_DIR/$PETSC_ARCH/lib
-ENV PETSC_LIB=$PETSC_DIR/$PETSC_ARCH/lib
-# CGNS-3.3.0
-ENV CGNS_HOME=$HOME/packages/CGNS-3.3.0/opt-gfortran
-ENV PATH=$PATH:$CGNS_HOME/bin
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CGNS_HOME/lib
+## Install CMake 3.18.4
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4.tar.gz --directory-prefix=/tmp && \
+    cd /tmp &&\
+    tar -xvzf cmake-3.18.4.tar.gz &&\
+    cd /tmp/cmake-3.18.4 &&\
+    ./bootstrap --prefix=/usr/local &&\
+    make &&\
+    make install
 
-# create the repo directory
-RUN mkdir -p $HOME/repos
+# BLAS and Lapack
+RUN wget https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz --directory-prefix=/tmp/ &&\
+    cd /tmp && tar -xvzf v3.9.0.tar.gz && mkdir -p /tmp/lapack-3.9.0/build && \
+    cd /tmp/lapack-3.9.0/build && \
+    /usr/local/bin/cmake -DCMAKE_INSTALL_PREFIX=/apps/hopr /tmp/lapack-3.9.0 &&  \
+    make && make install &&\
+    rm -rf /tmp/lapack-3.9.0
 
-# MACH framework
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/baseclasses && \
-    cd baseclasses && \
-    pip install .
+ENV LD_LIBRARY_PATH=/apps/hopr/lib:$LD_LIBRARY_PATH \
+    PATH=/apps/hopr/bin:$PATH
 
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/pyspline && \
-    cd pyspline && \
-    cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && \
-    make && \
-    pip install .
+#HOPR
+RUN git clone https://github.com/FluidNumerics/hopr.git /tmp/hopr && \
+    mkdir /tmp/hopr/build && \
+    cd /tmp/hopr/build && \
+    /usr/local/bin/cmake -DCMAKE_INSTALL_PREFIX=/apps/hopr /tmp/hopr &&\
+    make && make install &&\
+    rm -rf /tmp/hopr
 
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/pygeo && \
-    cd pygeo && \
-    pip install .
+FROM debian:bullseye
 
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/multipoint && \
-    cd multipoint && \
-    pip install .
-
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/pyhyp && \
-    cd pyhyp && \
-    cp -r config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk config/config.mk && \
-    make && \
-    pip install .
-
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/cgnsutilities && \
-    cd cgnsutilities && \
-    cp config.mk.info config.mk && \
-    make && \
-    pip install .
-
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/idwarp && \
-    cd idwarp && \
-    cp -r config/defaults/config.LINUX_GFORTRAN_OPENMPI.mk config/config.mk && \
-    make && \
-    pip install .
-
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/pyoptsparse && \
-    cd pyoptsparse && \
-    pip install .
-
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/adflow && \
-    cd adflow && \
-    cp -r config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && \
-    make && \
-    pip install .
-
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/pyofm && \
-    cd pyofm && \
-    . $HOME/OpenFOAM/OpenFOAM-v1812/etc/bashrc && \
-    make && \
-    pip install .
-
-RUN cd $HOME/repos && \
-    git clone https://github.com/mdolab/dafoam && \
-    cd dafoam && \
-    . $HOME/OpenFOAM/OpenFOAM-v1812/etc/bashrc && \
-    ./Allmake && \
-    pip install .
-
-RUN rm -rf $HOME/repos
+COPY --from=devel /apps/ /apps/
