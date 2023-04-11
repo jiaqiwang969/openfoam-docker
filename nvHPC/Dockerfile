@@ -57,37 +57,5 @@ RUN cd /tmp && \
     python3 setup.py install && \
     rm -rf /tmp/pyCGNS
 
-# Install MOAB and pymoab from sources
-RUN cd /tmp && \
-    git clone --depth=1 https://bitbucket.org/fathomteam/moab.git && \
-    cd moab && \
-    autoreconf -fi && \
-    ./configure \
-        --prefix=/usr/local \
-        --with-mpi \
-        CC=mpicc \
-        CXX=mpicxx \
-        FC=mpif90 \
-        F77=mpif77 \
-        --enable-optimize \
-        --enable-shared=yes \
-        --with-blas=-lopenblas \
-        --with-lapack=-lopenblas \
-        --with-scotch=/usr/lib \
-        --with-metis=/usr/lib/x86_64-linux-gnu \
-        --with-eigen3=/usr/include/eigen3 \
-        --with-x \
-        --with-cgns \
-        --with-netcdf \
-        --with-hdf5=/usr/lib/hdf5-openmpi \
-        --with-hdf5-ldflags="-L/usr/lib/hdf5-openmpi/lib" \
-        --enable-ahf=yes \
-        --enable-tools=yes && \
-    make -j2 && make install && \
-    \
-    cd pymoab && \
-    python3 setup.py install && \
-    rm -rf /tmp/moab
-
 
 
