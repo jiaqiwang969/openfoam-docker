@@ -3,16 +3,8 @@ FROM debian:bullseye as devel
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt update -y && \
-    apt install -y wget git libssl-dev build-essential gfortran
+    apt install -y wget git libssl-dev build-essential gfortran cmake
 
-## Install CMake 3.18.4
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4.tar.gz --directory-prefix=/tmp && \
-    cd /tmp &&\
-    tar -xvzf cmake-3.18.4.tar.gz &&\
-    cd /tmp/cmake-3.18.4 &&\
-    ./bootstrap --prefix=/usr/local &&\
-    make &&\
-    make install
 
 # BLAS and Lapack
 RUN wget https://github.com/Reference-LAPACK/lapack/archive/v3.9.0.tar.gz --directory-prefix=/tmp/ &&\
