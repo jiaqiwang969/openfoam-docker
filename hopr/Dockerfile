@@ -57,7 +57,7 @@ RUN cd /tmp && \
     python3 setup.py install && \
     rm -rf /tmp/pyCGNS
 
-# Install dopr from source
+# Install hopr from source
 RUN cd /opt && \
     git clone --depth=1 -b master https://github.com/flexi-framework/hopr.git && \
     cd hopr && \
@@ -65,4 +65,6 @@ RUN cd /opt && \
     cd build && \
     cmake .. -DLIBS_BUILD_HDF5=OFF && \
     make -j2 && make install
+    
+RUN export PATH=$PATH:/opt/hopr/bin
 
