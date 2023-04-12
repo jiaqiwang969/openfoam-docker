@@ -66,5 +66,4 @@ RUN cd /opt && \
     cmake .. -DLIBS_BUILD_HDF5=OFF && \
     make -j2 && make install
     
-RUN export PATH=$PATH:/opt/hopr/bin
 
