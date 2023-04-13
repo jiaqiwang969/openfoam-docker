@@ -40,21 +40,21 @@ RUN useradd docker
 WORKDIR /home/docker
 
 # Install Python dependencies
-RUN pip3 install numpy>=1.8         \
-                 pytools>=2016.2.1  \
-                 mako>=1.0.0        \
-                 appdirs>=1.4.0     \
-                 mpi4py>=2.0     && \
-    pip3 install pycuda>=2015.1     \
-                 h5py>=2.6.0     && \
-    wget -q -O GiMMiK-2.1.tar.gz    \
+RUN pip3 install numpy>=1.8         
+RUN pip3 install pytools>=2016.2.1  
+RUN pip3 install mako>=1.0.0        
+RUN pip3 install appdirs>=1.4.0     
+RUN pip3 install mpi4py>=2.0     
+RUN pip3 install pycuda>=2015.1     
+RUN pip3 install h5py>=2.6.0     
+RUN pip3 install tensorflow
+RUN    wget -q -O GiMMiK-2.1.tar.gz    \
         https://github.com/vincentlab/GiMMiK/archive/v2.1.tar.gz && \
     tar -xvzf GiMMiK-2.1.tar.gz  && \
     cd GiMMiK-2.1                && \
     python3 setup.py install     && \
     cd ..                        && \
     rm -rf GiMMiK-2.1.tar.gz GiMMiK-2.1
-RUN pip3 install tensorflow
 # Set base directory for pyCUDA cache
 ENV XDG_CACHE_HOME /tmp
 
