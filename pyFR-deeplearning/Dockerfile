@@ -1,41 +1,42 @@
-FROM ubuntu:20.04
+FROM centos:centos7
 
-# build a container with tcl modules for singularity-hpc
-# docker build -f Dockerfile.tcl -t singularity-hpc .
+# build a container with lmod for singularity-hpc
+# docker build -t singularity-hpc .
 
 LABEL MAINTAINER @vsoch
-ENV DEBIAN_FRONTEND noninteractive
+ENV LMOD_VER 8.4.3
 
-RUN apt-get update && \
-    apt-get install -y build-essential \
-    gcc \
-    tcl-dev \
-    autoconf \
-    automake \
-    python3 \
-    python3-sphinx \
-    python3-dev \
-    python3-pip \
-    curl \
-    less \
-    wget
+RUN yum -y install git tar which bzip2 xz \
+            epel-release make automake gcc gcc-c++ patch \
+            python-keyring zlib-devel openssl-devel unzip iproute \
+            python3 python3-dev wget tcl-devel
+RUN rpm -ivh https://kojipkgs.fedoraproject.org//packages/http-parser/2.7.1/3.el7/x86_64/http-parser-2.7.1-3.el7.x86_64.rpm
+RUN mkdir -p /build
+WORKDIR /build
+RUN curl -LO http://github.com/TACC/Lmod/archive/${LMOD_VER}.tar.gz
+RUN mv /build/${LMOD_VER}.tar.gz /build/Lmod-${LMOD_VER}.tar.gz
+RUN tar xvf Lmod-${LMOD_VER}.tar.gz
 
-RUN wget -O- http://neuro.debian.net/lists/xenial.us-ca.full | tee /etc/apt/sources.list.d/neurodebian.sources.list && \
-    apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9 && \
-    apt-get update && \
-    apt-get install -y singularity-container
+WORKDIR /build/Lmod-${LMOD_VER}
 
-RUN curl -LJO https://github.com/cea-hpc/modules/releases/download/v4.7.0/modules-4.7.0.tar.gz && \
-    tar xfz modules-4.7.0.tar.gz  && \
-    cd modules-4.7.0 && \
-    ./configure && \
-    make && \
-    make install
+RUN yum -y install lua lua-devel lua-posix lua-filesystem tcl iproute
 
-RUN pip3 install ipython
-WORKDIR /code
-COPY . /code
-RUN pip3 install -e .[all]
+RUN ./configure --prefix=/usr/local
+RUN make install
+RUN ln -s /usr/local/lmod/lmod/init/profile /etc/profile.d/modules.sh
+RUN ln -s /usr/local/lmod/lmod/init/cshrc /etc/profile.d/modules.csh
+
+ENV PATH /opt/conda/bin:${PATH}
+ENV LANG C.UTF-8
+RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
+    rm Miniconda3-latest-Linux-x86_64.sh
+
+# install singularity
+RUN yum update -y && \
+    yum install -y epel-release && \
+    yum update -y && \
+    yum install -y singularity
 
 # If we don't run shpc through bash entrypoint, module commands not found
 ENTRYPOINT ["/code/entrypoint.sh"]
