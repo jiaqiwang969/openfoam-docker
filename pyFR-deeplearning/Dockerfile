@@ -1,74 +1,41 @@
-FROM nvidia/cuda:9.2-devel-ubuntu16.04
-#ref:https://sarus.readthedocs.io/en/stable/cookbook/pyfr/pyfr.html
-#https://github.com/sisl/deep_flow_control
-LABEL com.pyfr.version="1.7.6"
-LABEL com.python.version="3.5"
+FROM ubuntu:20.04
 
-# Install system dependencies
-# Metis is a library for mesh partitioning:
-# http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
-RUN apt-get update && apt-get install -y   \
-        unzip                       \
-        wget                        \
-        build-essential             \
-        gfortran-5                  \
-        strace                      \
-        realpath                    \
-        libopenblas-dev             \
-        liblapack-dev               \
-        python3-dev                 \
-        python3-setuptools          \
-        python3-pip                 \
-        libhdf5-dev                 \
-        libmetis-dev                \
-        --no-install-recommends  && \
-    rm -rf /var/lib/apt/lists/*
+# build a container with tcl modules for singularity-hpc
+# docker build -f Dockerfile.tcl -t singularity-hpc .
 
-# Install MPICH 3.1.4
-RUN wget -q http://www.mpich.org/static/downloads/3.1.4/mpich-3.1.4.tar.gz && \
-    tar xvf mpich-3.1.4.tar.gz                       && \
-    cd mpich-3.1.4                                   && \
-    ./configure --disable-fortran --prefix=/usr      && \
-    make -j$(nproc)                                  && \
-    make install                                     && \
-    cd ..                                            && \
-    rm -rf mpich-3.1.4.tar.gz mpich-3.1.4            && \
-    ldconfig
+LABEL MAINTAINER @vsoch
+ENV DEBIAN_FRONTEND noninteractive
 
-# Create new user
-RUN useradd docker
-WORKDIR /home/docker
+RUN apt-get update && \
+    apt-get install -y build-essential \
+    gcc \
+    tcl-dev \
+    autoconf \
+    automake \
+    python3 \
+    python3-sphinx \
+    python3-dev \
+    python3-pip \
+    curl \
+    less \
+    wget
 
-# Install Python dependencies
-RUN pip3 install numpy>=1.8         
-RUN pip3 install pytools>=2016.2.1  
-RUN pip3 install mako>=1.0.0        
-RUN pip3 install appdirs>=1.4.0     
-RUN pip3 install mpi4py>=2.0     
-RUN pip3 install pycuda>=2015.1     
-RUN pip3 install h5py>=2.6.0     
-RUN pip3 install tensorflow
-RUN    wget -q -O GiMMiK-2.1.tar.gz    \
-        https://github.com/vincentlab/GiMMiK/archive/v2.1.tar.gz && \
-    tar -xvzf GiMMiK-2.1.tar.gz  && \
-    cd GiMMiK-2.1                && \
-    python3 setup.py install     && \
-    cd ..                        && \
-    rm -rf GiMMiK-2.1.tar.gz GiMMiK-2.1
-# Set base directory for pyCUDA cache
-ENV XDG_CACHE_HOME /tmp
+RUN wget -O- http://neuro.debian.net/lists/xenial.us-ca.full | tee /etc/apt/sources.list.d/neurodebian.sources.list && \
+    apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9 && \
+    apt-get update && \
+    apt-get install -y singularity-container
 
+RUN curl -LJO https://github.com/cea-hpc/modules/releases/download/v4.7.0/modules-4.7.0.tar.gz && \
+    tar xfz modules-4.7.0.tar.gz  && \
+    cd modules-4.7.0 && \
+    ./configure && \
+    make && \
+    make install
 
-# Install PyFR and https://github.com/sisl/deep_flow_control
-RUN cd /opt && \
-    git clone https://github.com/PyFR/PyFR.git  && \
-    git clone https://github.com/sisl/deep_flow_control.git && \
-    cd PyFR && \
-    git checkout v1.7.6 && \
-    cp -rf ../deep_flow_control/mpc_files/controller.patch . && \
-    git apply controller.patch && \
-    python3 setup.py install     && \
-    cd ..                        
-RUN 
+RUN pip3 install ipython
+WORKDIR /code
+COPY . /code
+RUN pip3 install -e .[all]
 
-CMD ["pyfr --help"]
+# If we don't run shpc through bash entrypoint, module commands not found
+ENTRYPOINT ["/code/entrypoint.sh"]
