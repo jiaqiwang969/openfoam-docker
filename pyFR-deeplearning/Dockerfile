@@ -6,7 +6,7 @@ FROM centos:centos8
 LABEL MAINTAINER @jiaqi
 
 # Task 1: Preparations
-RUN yum -y update
+RUN yum update
 RUN yum -y install curl 
 RUN yum -y findutils 
 RUN yum -y git 
