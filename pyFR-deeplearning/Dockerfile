@@ -50,7 +50,6 @@ RUN useradd -m swmanager
 RUN mkdir /opt/sw
 RUN chown swmanager:swmanager /opt/sw
 
-USER swmanager
 RUN mkdir ~/build
 WORKDIR ~/build
 #Task 2: Install Lmod
@@ -59,6 +58,7 @@ RUN tar -xf 8.7.19.tar.gz && \
     cd Lmod-8.7.19/ && \
     ./configure --prefix=/opt/sw && \
     make install
+USER root
 RUN ln -s /opt/sw/lmod/lmod/init/profile /etc/profile.d/modules.sh
 RUN module avail
 #Task 3: Install Spack
