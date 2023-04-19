@@ -58,9 +58,10 @@ RUN tar -xf 8.7.19.tar.gz && \
     cd Lmod-8.7.19/ && \
     ./configure --prefix=/opt/sw && \
     make install
-USER root
 RUN ln -s /opt/sw/lmod/lmod/init/profile /etc/profile.d/modules.sh
+RUN source /etc/profile.d/modules.sh
 RUN module avail
+
 #Task 3: Install Spack
 RUN wget https://github.com/spack/spack/releases/download/v0.19.1/spack-0.19.1.tar.gz
 RUN tar -xf spack-0.19.1.tar.gz && \
