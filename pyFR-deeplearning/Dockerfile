@@ -24,7 +24,6 @@ RUN yum -y install gcc
 RUN yum -y install gcc-c++ 
 RUN yum -y install gcc-gfortran 
 RUN yum -y install patch 
-RUN yum -y install python-keyring 
 RUN yum -y install zlib-devel 
 RUN yum -y install openssl-devel 
 RUN yum -y install unzip 
