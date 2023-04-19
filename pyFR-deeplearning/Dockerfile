@@ -8,44 +8,44 @@ LABEL MAINTAINER @jiaqi
 # Task 1: Preparations
 RUN yum update -y
 RUN yum -y install curl 
-RUN yum -y findutils 
-RUN yum -y git 
-RUN yum -y gnupg2 
-RUN yum -y hostname 
-RUN yum -y tar 
-RUN yum -y which 
-RUN yum -y bzip2 
-RUN yum -y xz
-RUN yum -y iproute 
-RUN yum -y redhat-lsb-core 
-RUN yum -y make 
-RUN yum -y automake 
-RUN yum -y gcc 
-RUN yum -y gcc-c++ 
-RUN yum -y gcc-gfortran 
-RUN yum -y patch 
-RUN yum -y python-keyring 
-RUN yum -y zlib-devel 
-RUN yum -y openssl-devel 
-RUN yum -y unzip 
-RUN yum -y iproute
-RUN yum -y python3 
-RUN yum -y python3-pip 
-RUN yum -y python3-setuptools 
-RUN yum -y python3-devel 
-RUN yum -y wget 
-RUN yum -y unzip 
+RUN yum -y install findutils 
+RUN yum -y install git 
+RUN yum -y install gnupg2 
+RUN yum -y install hostname 
+RUN yum -y install tar 
+RUN yum -y install which 
+RUN yum -y install bzip2 
+RUN yum -y install xz
+RUN yum -y install iproute 
+RUN yum -y install redhat-lsb-core 
+RUN yum -y install make 
+RUN yum -y install automake 
+RUN yum -y install gcc 
+RUN yum -y install gcc-c++ 
+RUN yum -y install gcc-gfortran 
+RUN yum -y install patch 
+RUN yum -y install python-keyring 
+RUN yum -y install zlib-devel 
+RUN yum -y install openssl-devel 
+RUN yum -y install unzip 
+RUN yum -y install iproute
+RUN yum -y install python3 
+RUN yum -y install python3-pip 
+RUN yum -y install python3-setuptools 
+RUN yum -y install python3-devel 
+RUN yum -y install wget 
+RUN yum -y install unzip 
 
-RUN yum -y epel-release 
-RUN yum -y lua 
-RUN yum -y lua-devel 
-RUN yum -y lua-json 
-RUN yum -y lua-lpeg 
-RUN yum -y lua-posix 
-RUN yum -y lua-term 
-RUN yum -y lua-filesystem
-RUN yum -y tcl 
-RUN yum -y tcl-devel 
+RUN yum -y install epel-release 
+RUN yum -y install lua 
+RUN yum -y install lua-devel 
+RUN yum -y install lua-json 
+RUN yum -y install lua-lpeg 
+RUN yum -y install lua-posix 
+RUN yum -y install lua-term 
+RUN yum -y install lua-filesystem
+RUN yum -y install tcl 
+RUN yum -y install tcl-devel 
 
 RUN useradd -m swmanager
 RUN mkdir /opt/sw
