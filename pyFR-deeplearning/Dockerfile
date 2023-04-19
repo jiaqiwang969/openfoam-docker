@@ -6,14 +6,48 @@ FROM centos:centos8
 LABEL MAINTAINER @jiaqi
 
 # Task 1: Preparations
-RUN yum -y update && \
-    yum -y install curl findutils git gnupg2 hostname tar which bzip2 xz \
-    iproute redhat-lsb-core make automake gcc gcc-c++ gcc-gfortran patch \
-    python-keyring zlib-devel openssl-devel unzip iproute \
-    python3 python3-pip python3-setuptools python3-devel wget unzip && \
-    yum -y install epel-release lua lua-devel lua-json lua-lpeg lua-posix lua-term lua-filesystem && \
-    yum -y install tcl tcl-devel && \
-    useradd -m swmanager && \
+RUN yum -y update
+RUN yum -y install curl 
+RUN yum -y findutils 
+RUN yum -y git 
+RUN yum -y gnupg2 
+RUN yum -y hostname 
+RUN yum -y tar 
+RUN yum -y which 
+RUN yum -y bzip2 
+RUN yum -y xz
+RUN yum -y iproute 
+RUN yum -y redhat-lsb-core 
+RUN yum -y make 
+RUN yum -y automake 
+RUN yum -y gcc 
+RUN yum -y gcc-c++ 
+RUN yum -y gcc-gfortran 
+RUN yum -y patch 
+RUN yum -y python-keyring 
+RUN yum -y zlib-devel 
+RUN yum -y openssl-devel 
+RUN yum -y unzip 
+RUN yum -y iproute
+RUN yum -y python3 
+RUN yum -y python3-pip 
+RUN yum -y python3-setuptools 
+RUN yum -y python3-devel 
+RUN yum -y wget 
+RUN yum -y unzip 
+
+RUN yum -y epel-release 
+RUN yum -y lua 
+RUN yum -y lua-devel 
+RUN yum -y lua-json 
+RUN yum -y lua-lpeg 
+RUN yum -y lua-posix 
+RUN yum -y lua-term 
+RUN yum -y lua-filesystem
+RUN yum -y tcl 
+RUN yum -y tcl-devel 
+
+RUN    useradd -m swmanager && \
     mkdir /opt/sw && \
     chown swmanager:swmanager /opt/sw
 
