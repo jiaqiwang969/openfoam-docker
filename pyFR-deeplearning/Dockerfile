@@ -82,7 +82,7 @@ echo ' core_compilers:' >> module.yaml &&
 echo ' - gcc@8.5.0' >> module.yaml
 RUN cd ~/build
 RUN source ~/build/spack-0.19.1/share/spack/setup-env.sh
-RUN echo '/opt/sw/modules/linux-centos8-x86_64/Core' > /opt/sw/lmod/lmod/init/.modulespath
+RUN echo '/opt/sw/modules/linux-centos7-x86_64/Core' > /opt/sw/lmod/lmod/init/.modulespath
 #Task 4: Install a first package
 RUN spack info tar
 RUN spack spec tar
